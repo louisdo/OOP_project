@@ -1,0 +1,33 @@
+train_data_path: "./data/dummy_data.csv" # path to .csv file that contains training data, 
+                                         # the .csv file should contain the 'source' and the 'dest column'
+
+test_data_path: ""                       # path to .csv file that contains testing data, 
+                                         # the .csv file should contain the 'source' and the 'dest column'
+
+ckpt_folder: "data/ckpt/testing"         # the path to the folder where the checkpoint will be saved,
+                                         # the folder should include 2 files: 'best_checkpoint.pth.tar' and 'best_config.json'
+
+vocab_path: "data/vocab/"                # the path to the folder where the vocab is saved, 
+                                         # the folder should include 2 files: 'index2word.json' and 'word2index.json'
+
+resume_path: ""                          # the path to the resume checkpoint file
+
+max_len: 20                              # max training sentence length
+
+batch_size: 2                            # self-explanatory
+
+d_model: 512                             # dimensionality of the main model Transformer, for more information
+                                         # please refer to 'https://arxiv.org/abs/1706.03762'
+
+nhead: 8                                 # number of attention heads for multi-head attention operation within
+                                         # the main model, for more information please refer to 'https://arxiv.org/abs/1706.03762'
+
+num_layers: 6                            # number of layers of both decoder and encoder block
+
+dropout: 0.1                             # dropout for training model
+
+vocab_size: 13                           # self-explanatory
+
+epochs: 200                              # number of training epochs
+
+lr: 0.0001                               # learning rate

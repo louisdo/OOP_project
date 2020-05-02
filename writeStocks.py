@@ -2,58 +2,90 @@ import numpy as np
 import re
 import operator
 
-file = open("Vnexpress_CLASSIFIED_VNINDEX.txt", "r", encoding="utf8" )
-#file = open("VNINDEX_500-525.txt", "r", encoding="utf8" )
-#file = open("test.txt", "r", encoding = "utf8" )
-data = file.read()
-file.close()
 
-words = re.findall("\w+", data)
-# print(words)
-word_dict = {}
-for wd in words:
-    if wd not in word_dict:
-        word_dict[wd] = 1
-    else : word_dict[wd] += 1
-# đếm số từ trong input
-# print(word_dict)
+class Process_raw_data():
+    def __init__(self,
+                 name_file_input,
+                 name_file_output,
+                 number_word_regular):
+                 
+        self.name_file_input = name_file_input
+        self.name_file_output = name_file_output
+        self.number_word_regular = number_word_regular
+        self.data = ''
+    
 
-def regularWord(numberWords, inputDict):
-    returnList = []
-    sorted_dict = dict(sorted(inputDict.items(), key=operator.itemgetter(1),reverse=True))   # sort dict decrease by 
-    sorted_list = list(sorted_dict)
-    for i in range(numberWords):
-        returnList.append(sorted_list[i])
-    return returnList
-
-regular = regularWord(30,word_dict)
-#print(regular)
-addStr = ""
-for i in regular:
-    addStr = addStr + "|" + i 
-
-text_process = "V.-Index| \d+/\d+| \d+.\d+| \S\d+.\d+\S\S| \d+|%" + addStr      
-#những từ đặc biệt và những từ thông thường
-
-print(text_process)
-lines = re.split("\d+:", data)
-processData = []
-# processData sẽ là mảng 2 chiều
-for line in lines:
-    tmp_process_data = re.findall(text_process, line)
-    processData.append(tmp_process_data)
+    def read_file(self):
+        file = open(self.name_file_input, "r", encoding="utf8" )
+        self.data = file.read()
+        file.close()
+        
+        return self.data
 
 
-#fileOut = open("out.txt","w", encoding="utf8")
-#fileOut = open("out20-25.txt","w", encoding="utf8")
-fileOut = open("output.txt", "w", encoding="utf8")
-for infor in processData:
-    for i in infor:
-        text = str(i)
-        fileOut.write(text + "  ")
-    fileOut.write("\n")
+    def first_process(self):
+        self.data = self.read_file()
+        
+        words = re.findall("\w+", self.data)
+        word_dict = {}
 
-# # for line in data:
-# #     print(line + "----")
+        for wd in words:
+            if wd not in word_dict:
+                word_dict[wd] = 1
+            else : word_dict[wd] += 1
+
+        return word_dict
 
 
+    def regularWords(self, inputDict):
+        returnList = []
+
+        sorted_dict = dict(sorted(inputDict.items(), key=operator.itemgetter(1),reverse=True))   # sort dict decrease by 
+        sorted_list = list(sorted_dict)
+
+        for i in range(self.number_word_regular):
+            returnList.append(sorted_list[i])
+
+        return returnList
+
+
+    def process_data(self):
+        word_dict = self.first_process()
+        regular = self.regularWords(word_dict)
+        regular_string = ""
+
+        for i in regular:
+            regular_string = regular_string + "|" + i 
+
+        text_process = "V.-Index| \d+/\d+| \d+.\d+| \S\d+.\d+\S\S| \d+|%" + regular_string      
+        #những từ đặc biệt và những từ thông thường
+
+        lines = re.split("\d+:", self.data)
+        processData = []
+        # processData sẽ là mảng 2 chiều
+
+        for line in lines:
+            tmp_process_data = re.findall(text_process, line)
+            processData.append(tmp_process_data)
+        
+        return processData
+
+
+    def write_file(self, content):
+        fileOut = open(self.name_file_output, "w", encoding="utf8")
+
+        for infor in content:
+            for i in infor:
+                text = str(i)
+                fileOut.write(text + "  ")
+            fileOut.write("\n")
+
+
+number_word_regular = int(input())
+
+VN_INDEX = Process_raw_data('Vnexpress_CLASSIFIED_VNINDEX.txt', 'output.txt',number_word_regular)
+output_data = VN_INDEX.process_data()
+VN_INDEX.write_file(output_data)
+print("done")
+    
+    

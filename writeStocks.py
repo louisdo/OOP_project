@@ -22,7 +22,8 @@ class Process_raw_data():
         
         return self.data
 
-
+    
+    #count words
     def first_process(self):
         self.data = self.read_file()
         
@@ -36,7 +37,7 @@ class Process_raw_data():
 
         return word_dict
 
-
+    
     def regularWords(self, inputDict):
         returnList = []
 
@@ -52,6 +53,7 @@ class Process_raw_data():
     def process_data(self):
         word_dict = self.first_process()
         regular = self.regularWords(word_dict)
+        
         regular_string = ""
 
         for i in regular:
@@ -61,14 +63,14 @@ class Process_raw_data():
         #những từ đặc biệt và những từ thông thường
 
         lines = re.split("\d+:", self.data)
-        processData = []
+        processedData = []
         # processData sẽ là mảng 2 chiều
 
         for line in lines:
-            tmp_process_data = re.findall(text_process, line)
-            processData.append(tmp_process_data)
+            tmp_processed_data = re.findall(text_processed, line)
+            processedData.append(tmp_processed_data)
         
-        return processData
+        return processedData
 
 
     def write_file(self, content):
@@ -80,12 +82,14 @@ class Process_raw_data():
                 fileOut.write(text + "  ")
             fileOut.write("\n")
 
-
+            
+print("nhập số từ phổ biến")
 number_word_regular = int(input())
 
 VN_INDEX = Process_raw_data('Vnexpress_CLASSIFIED_VNINDEX.txt', 'output.txt',number_word_regular)
 output_data = VN_INDEX.process_data()
 VN_INDEX.write_file(output_data)
+
 print("done")
     
     

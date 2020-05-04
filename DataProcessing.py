@@ -12,23 +12,23 @@ class DataProcessing():
         self.data = []
         self.stopwords = []
 
-    def ReadData(self):
+    def read_data(self):
         file_open = open(self.file_name_input, mode='r', encoding='utf_8')
         for line in file_open:
             self.data.append(line.rstrip("\n"))
         file_open.close()
         return self.data
 
-    def GetStopWords(self):
+    def get_stopwords(self):
         file_stop_words = open("stopwords.txt", mode='r', encoding='utf-8')
         for word in file_stop_words:
             self.stopwords.append(word.rstrip("\n"))
         file_stop_words.close()
         return self.stopwords
 
-    def WriteData(self):
-        data_input = self.ReadData()
-        stop_words = self.GetStopWords()
+    def write_data(self):
+        data_input = self.read_data()
+        stop_words = self.get_stopwords()
         file_ouput = open(self.file_name_output, mode='w', encoding='utf-8')
         for data in data_input:
             res = []
@@ -45,4 +45,4 @@ class DataProcessing():
 
 
 STOCK = DataProcessing('Vnexpress.CLASSIFIED.VNINDEX.txt', 'output.txt', 'stopwords.txt')
-STOCK.WriteData()
+STOCK.write_data()

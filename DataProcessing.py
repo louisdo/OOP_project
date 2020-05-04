@@ -42,7 +42,5 @@ class DataProcessing():
         file_ouput.close()
 
 
-
-
 STOCK = DataProcessing('Vnexpress.CLASSIFIED.VNINDEX.txt', 'output.txt', 'stopwords.txt')
 STOCK.write_data()

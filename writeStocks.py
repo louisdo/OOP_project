@@ -24,6 +24,7 @@ class Process_raw_data():
         return self.data
 
 
+    #count number of words in a paragraph
     def count_word(self, inputString):
             words = re.findall("\w+", inputString)
             word_dict = {}
@@ -35,15 +36,16 @@ class Process_raw_data():
 
             return word_dict
 
-    #count words
+
+    #spit and count 
     def first_process(self):
         self.data = self.read_file()
 
-        paragrams = self.data.split('NHÓM')
+        paragraphs = self.data.split('NHÓM')
         
         list_word_dict = []
 
-        for para in paragrams:
+        for para in paragraphs:
             word_dict = self.count_word(para)
 
             list_word_dict.append(word_dict)
@@ -57,39 +59,37 @@ class Process_raw_data():
         return sorted_dict
 
 
-    def tf_idf(self, t,max_t,D,d_t):
+    def tf_idf(self, t, max_t, D, d_t):
         return t / max_t * math.log10(D / (1 + d_t))
 
 
+    # Main Processing
     def regular_words(self, list_word_dict):
         listRegular = []
-        frequence_word = self.count_word(self.data)
 
-        number_words_in_data = 0
+        frequence_word_in_data = self.count_word(self.data)
 
-        max_t = 0
+        max_t = 0 
         D = len(list_word_dict)
 
-        count_appear_d = {}
+        #count word t in paragraph 
+        count_appear_d = {} 
         
-        for word in frequence_word:
+        for word in frequence_word_in_data:
             count_appear_d[word] = 0
 
-            number_words_in_data += 1
+            if frequence_word_in_data[word] > max_t:
+                max_t = frequence_word_in_data[word]
 
-            if frequence_word[word] > max_t:
-                max_t = frequence_word[word]
-
+        #calculate count_appear_d
         for word_dict in list_word_dict:
-            sort_dict =  self.sort_words(word_dict)
-
-            for w in sort_dict:
+            for w in word_dict:
                 count_appear_d[w] += 1
         
         regular_dict = {}
 
-        for word in frequence_word:
-            t = frequence_word[word]
+        for word in frequence_word_in_data:
+            t = frequence_word_in_data[word]
             d_t = count_appear_d[word] 
 
             regular_dict[word] = self.tf_idf(t, max_t, D, d_t)
@@ -106,7 +106,6 @@ class Process_raw_data():
     def process_data(self):
         list_word_dict = self.first_process()
         regular = self.regular_words(list_word_dict)
-        print(regular)
 
         regular_string = ''
 
@@ -117,6 +116,7 @@ class Process_raw_data():
         #những từ đặc biệt và những từ thông thường
 
         lines = re.split("\d+:", self.data)
+
         processData = []
         # processData sẽ là mảng 2 chiều
 
@@ -134,6 +134,7 @@ class Process_raw_data():
             for i in infor:
                 text = str(i)
                 fileOut.write(text + "  ")
+
             fileOut.write("\n")
 
 
@@ -141,9 +142,9 @@ print("nhập số từ phổ biến")
 number_word_regular = int(input())
 
 VN_INDEX = Process_raw_data('Vnexpress_CLASSIFIED_VNINDEX.txt', 'output.txt',number_word_regular)
+
 output_data = VN_INDEX.process_data()
 VN_INDEX.write_file(output_data)
 
 print("done")
-    
     

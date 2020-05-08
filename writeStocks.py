@@ -4,11 +4,17 @@ import operator
 import math
 
 
-class Process_raw_data():
+class ProcessRawData():
+    """
+    Change normal sentences to keyword phrase
+    """
     def __init__(self,
-                 name_file_input,
-                 name_file_output,
-                 number_word_regular):
+                 name_file_input: str,
+                 name_file_output: str,
+                 number_word_regular: int):
+        """
+        number_word_regular : limit the number of common words
+        """
                  
         self.name_file_input = name_file_input
         self.name_file_output = name_file_output
@@ -26,19 +32,27 @@ class Process_raw_data():
 
     #count number of words in a paragraph
     def count_word(self, inputString):
-            words = re.findall("\w+", inputString)
-            word_dict = {}
+        """
+        inputString: str  (pragraph,sentences,...)
+        Output: dictionary (key: word, value: number word in inputString)
+        """
 
-            for wd in words:
-                if wd not in word_dict:
-                    word_dict[wd] = 1
-                else : word_dict[wd] += 1
+        words = re.findall("\w+", inputString)
+        word_dict = {}
 
-            return word_dict
+        for wd in words:
+            if wd not in word_dict:
+                word_dict[wd] = 1
+            else : word_dict[wd] += 1
+
+        return word_dict
 
 
-    #spit and count 
     def first_process(self):
+        """
+        Split data by word (NHÓM) and count_word for each element 
+        Output: list of dictionary count_word
+        """
         self.data = self.read_file()
 
         paragraphs = self.data.split('NHÓM')
@@ -54,7 +68,7 @@ class Process_raw_data():
 
     
     def sort_words(self, inputDict):
-        sorted_dict = dict(sorted(inputDict.items(), key=operator.itemgetter(1),reverse=True))   # sort dict decrease by 
+        sorted_dict = dict(sorted(inputDict.items(), key=operator.itemgetter(1),reverse=True))   # sort dict decrease by value
 
         return sorted_dict
 
@@ -65,6 +79,10 @@ class Process_raw_data():
 
     # Main Processing
     def regular_words(self, list_word_dict):
+        """
+        list_word_dict: list of dictionary count_word
+        Output: list of common words (nunmber_word_regular elements)
+        """
         listRegular = []
 
         frequence_word_in_data = self.count_word(self.data)
@@ -72,7 +90,7 @@ class Process_raw_data():
         max_t = 0 
         D = len(list_word_dict)
 
-        #count word t in paragraph 
+        #count paragraph contain word t
         count_appear_d = {} 
         
         for word in frequence_word_in_data:
@@ -88,6 +106,7 @@ class Process_raw_data():
         
         regular_dict = {}
 
+        # calculate IF-IDF of words
         for word in frequence_word_in_data:
             t = frequence_word_in_data[word]
             d_t = count_appear_d[word] 
@@ -104,30 +123,39 @@ class Process_raw_data():
 
 
     def process_data(self):
+        """
+        Use regular expression to find common words
+        Output: list of list common words
+        """
         list_word_dict = self.first_process()
         regular = self.regular_words(list_word_dict)
+        print(regular)
 
         regular_string = ''
 
         for i in regular:
             regular_string = regular_string + '|' + i 
 
+        # combine with some special words
         text_process = 'V.-Index| \d+/\d+| \d+.\d+| \S\d+.\d+\S\S| \d+|%' + regular_string      
-        #những từ đặc biệt và những từ thông thường
 
         lines = re.split("\d+:", self.data)
 
-        processData = []
+        processedData = []
         # processData sẽ là mảng 2 chiều
 
         for line in lines:
-            tmp_process_data = re.findall(text_process, line)
-            processData.append(tmp_process_data)
+            tmp_processed_data = re.findall(text_process, line)
+
+            processedData.append(tmp_processed_data)
         
-        return processData
+        return processedData
 
 
     def write_file(self, content):
+        """
+        content: list of list
+        """
         fileOut = open(self.name_file_output, "w", encoding="utf8")
 
         for infor in content:
@@ -141,7 +169,7 @@ class Process_raw_data():
 print("nhập số từ phổ biến")
 number_word_regular = int(input())
 
-VN_INDEX = Process_raw_data('Vnexpress_CLASSIFIED_VNINDEX.txt', 'output.txt',number_word_regular)
+VN_INDEX = ProcessRawData('Vnexpress_CLASSIFIED_VNINDEX.txt', 'output.txt',number_word_regular)
 
 output_data = VN_INDEX.process_data()
 VN_INDEX.write_file(output_data)

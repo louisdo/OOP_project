@@ -2,6 +2,7 @@ import numpy as np
 import re
 import operator
 import math
+import csv
 
 
 class ProcessRawData():
@@ -13,6 +14,7 @@ class ProcessRawData():
                  name_file_output: str,
                  number_word_regular: int):
         """
+        type file output :CSV file
         number_word_regular : limit the number of common words
         """
                  
@@ -50,6 +52,7 @@ class ProcessRawData():
 
     def first_process(self):
         """
+        Change numbers to "number"
         Split data by word (NHÓM) and count_word for each element 
         Output: list of dictionary count_word
         """
@@ -137,7 +140,8 @@ class ProcessRawData():
             regular_string = regular_string + '|' + i 
 
         # combine with some special words
-        text_process = 'V.-Index| \d+/\d+| \d+.\d+| \S\d+.\d+\S\S| \d+|%' + regular_string      
+
+        text_process = 'V.-Index|number|%' + regular_string      
 
         lines = re.split("\d+:", self.data)
 
@@ -145,34 +149,66 @@ class ProcessRawData():
         # processData sẽ là mảng 2 chiều
 
         for line in lines:
-            tmp_processed_data = re.findall(text_process, line)
+            characters_to_number = '\d+[,]\d+|\d+[.]\d+|\d+'
+
+            #change numbers to string 'number'
+            line_no_numbers = re.sub(characters_to_number,'number',line)
+
+            tmp_processed_data = re.findall(text_process, line_no_numbers)
 
             processedData.append(tmp_processed_data)
         
         return processedData
 
 
-    def write_file(self, content):
+    def write_fileCSV(self, content):
         """
         content: list of list
         """
         fileOut = open(self.name_file_output, "w", encoding="utf8")
 
-        for infor in content:
-            for i in infor:
-                text = str(i)
-                fileOut.write(text + "  ")
+        list_line_source = []
 
-            fileOut.write("\n")
+        for line in content:
+            tmp = ''
+
+            for word in line:
+                tmp = tmp + word + '_'
+
+            list_line_source.append(tmp)
+
+        list_line_dest = []
+
+        lines = re.split('\d+:',self.data)
+
+        for line in lines:
+            line_dest = re.sub('\s+','_',line)
+            list_line_dest.append(line_dest)
+
+        list_write = [['dest','source']]
+
+        #combine two lists
+        for i in range(len(list_line_source)):
+            tmp = []
+            
+            tmp.append(list_line_dest[i])
+            tmp.append(list_line_source[i])
+
+            list_write.append(tmp)
+
+        with fileOut:
+            writer = csv.writer(fileOut)
+            writer.writerows(list_write)
+
 
 
 print("nhập số từ phổ biến")
 number_word_regular = int(input())
 
-VN_INDEX = ProcessRawData('Vnexpress_CLASSIFIED_VNINDEX.txt', 'output.txt',number_word_regular)
+VN_INDEX = ProcessRawData('Vnexpress_CLASSIFIED_VNINDEX.txt', 'output.csv',number_word_regular)
 
 output_data = VN_INDEX.process_data()
-VN_INDEX.write_file(output_data)
+VN_INDEX.write_fileCSV(output_data)
 
 print("done")
     

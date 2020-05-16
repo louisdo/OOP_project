@@ -1,8 +1,9 @@
 import json
 import os
-import torch 
-from preprocess.preprocess import Preprocessing
+import torch
+from pyvi import ViTokenizer
 from model import Transformer
+from preprocess import RawDataPrep
 
 class TransformerInference:
     """
@@ -27,18 +28,6 @@ class TransformerInference:
 
         self.device = torch.device(device)
 
-        self.model = Transformer(d_model = config["d_model"],
-                                 nhead = config["nhead"],
-                                 num_layers = config["num_layers"],
-                                 dropout = config["dropout"],
-                                 vocab_size = config["vocab_size"] + 2,
-                                 max_len = config["max_len"])
-
-        state_dict = torch.load(checkpoint_file)
-        self.model.load_state_dict(state_dict)
-        self.model = self.model.to(self.device)
-        self.model.eval()
-
         word2index_file = os.path.join(vocab_folder, "word2index.json")
         index2word_file = os.path.join(vocab_folder, "index2word.json")
 
@@ -50,7 +39,23 @@ class TransformerInference:
             index2word = json.load(f)
             self.index2word = {int(item[0]):item[1] for item in index2word.items()}
 
-        self.sos = torch.tensor([[len(self.word2index)]]).to(self.device).long()
+        self.patterns = RawDataPrep.get_patterns()
+
+        self.sos = torch.tensor([[self.word2index["<sos>"]]]).to(self.device).long()
+
+        real_vocab_size = len(self.index2word)
+
+        self.model = Transformer(d_model = config["d_model"],
+                                 nhead = config["nhead"],
+                                 num_layers = config["num_layers"],
+                                 dropout = config["dropout"],
+                                 vocab_size = real_vocab_size,
+                                 max_len = config["max_len"])
+
+        state_dict = torch.load(checkpoint_file)
+        self.model.load_state_dict(state_dict)
+        self.model = self.model.to(self.device)
+        self.model.eval()
 
         self.softmax = torch.nn.Softmax(dim=1)
         
@@ -62,9 +67,10 @@ class TransformerInference:
         output:
         + the predicted sequence
         """
-        tokenized_source = Preprocessing.tokenize_string(source)
+        processed_source, replaced_terms = RawDataPrep.process_sentence(source, self.patterns)
+        tokenized_source = ViTokenizer.tokenize(processed_source).split(" ")
 
-        encoded_source = [self.word2index[token] for token in tokenized_source]
+        encoded_source = [self.word2index["<sos>"]] + [self.word2index[token] for token in tokenized_source] +[self.word2index["<eos>"]]
         
         encoded_source = torch.tensor(encoded_source).unsqueeze(0).to(self.device).transpose(0, 1)
 
@@ -72,7 +78,7 @@ class TransformerInference:
 
         count = 0
 
-        while output[0][-1].item() != len(self.word2index) + 1 and count <=100:
+        while output[0][-1].item() != self.word2index["<eos>"] and count <=100:
             model_output = self.model(encoded_source, output.transpose(0, 1))[:,-1:,:]
             model_output = self.softmax(model_output.squeeze(0))
 
@@ -85,10 +91,13 @@ class TransformerInference:
         result = []
         for ind in output:
             index = ind.item()
-            if index<=12:
-                result.append(self.index2word[index])
+            if 0 < index < len(self.index2word):
+                word = self.index2word[index]
+                if word in replaced_terms:
+                    word = replaced_terms[word]
+                result.append(word)
 
         return " ".join(result)
 
-    def __call__(self, source):
+    def __call__(self, source: str):
         return self.predict(source)

@@ -36,7 +36,7 @@ class Encoder(torch.nn.Module):
                                                            num_layers = num_layers)
 
     def forward(self, 
-                embedded_source: torch.tensor, 
+                embedded_source: torch.tensor,
                 src_key_padding_mask = None):
         """
         input:

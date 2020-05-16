@@ -40,13 +40,17 @@ class Transformer(torch.nn.Module):
                                vocab_size = vocab_size,
                                max_len = max_len)
         
+        # in this problem, the source and the dest sequence comes from the same language,
+        # so 1 word embedder is sufficient
         self.wordemb = WordEmb(vocab_size = vocab_size,
                                d_model = d_model)
+
     
     def forward(self, 
                 source, 
                 target,
                 src_key_padding_mask = None,
+                tgt_mask = None,
                 tgt_key_padding_mask = None):
         """
         input:
@@ -72,6 +76,7 @@ class Transformer(torch.nn.Module):
 
         output = self.decoder(embedded_target, 
                               memory,
+                              tgt_mask = tgt_mask,
                               tgt_key_padding_mask = tgt_key_padding_mask,
                               memory_key_padding_mask = src_key_padding_mask)
 

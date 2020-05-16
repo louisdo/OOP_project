@@ -46,6 +46,7 @@ class Decoder(torch.nn.Module):
     def forward(self, 
                 embedded_target: torch.tensor, 
                 memory: torch.tensor, 
+                tgt_mask = None,
                 tgt_key_padding_mask: torch.ByteTensor = None, 
                 memory_key_padding_mask: torch.ByteTensor = None):
         
@@ -68,6 +69,7 @@ class Decoder(torch.nn.Module):
         embedded_target = self.posenc(embedded_target)
         output = self.relu(self.decoder(embedded_target, 
                                         memory,
+                                        tgt_mask = tgt_mask,
                                         tgt_key_padding_mask = tgt_key_padding_mask,
                                         memory_key_padding_mask = memory_key_padding_mask))
         output = self.linear(output)

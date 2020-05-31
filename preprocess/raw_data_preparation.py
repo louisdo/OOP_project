@@ -17,13 +17,19 @@ class RawDataPrep:
 
     @staticmethod
     def get_patterns():
+        """
+        Get pattern for word filtering
+        """
         regexes = {
-            "number": "^[-+]?\d+([\.,]?\d+)*(%){0}$",
-            "date": "^\(?\d+\s?[/-]{1}\s?\d+[[/-]?\d*]{0,1}\)?$",
-            "percent": "^\(?[-+]?\d+[\.,]?\d*(%){1}\)?$"
+            "number": "[-+]?\d+([\.,]?\d+)*(%){0}(\s{1}(tỷ|triệu|chục|trăm|nghìn|ngàn){1,2}){0}",
+            "date": "\(?([1-9]|[12][0-9]|3[01])+\s?[/-]{1}\s?([1-9]|1[0-2])+[[/-]?\d*]{0,1}\)?",
+            "percent": "\(?[-+]?\d+[\.,]?\d*(%){1}\)?",
+            "word_number": "[-+]?\d+([\.,]?\d+)*(%){0}(\s{1}(tỷ|triệu|chục|trăm|nghìn|ngàn)){1,2}",
+            "time": "\d{1,2}h\d{1,2}"
         }
 
         patterns = {}
+
         for reg in regexes:
             patterns[reg] = re.compile(regexes[reg])
 
@@ -41,23 +47,28 @@ class RawDataPrep:
         string = string.lower()
         string = string.replace("vn-index", "vnindex")
 
-        string = string.split(" ")
         pattern_count = {pattern: 0 for pattern in patterns}
 
         replaced_terms = {}
-        for ind in range(len(string)):
-            char = string[ind]
-            for pattern in patterns:
-                if patterns[pattern].match(char):
-                    pattern_count[pattern] += 1
-                    new_term = pattern + "_{}".format(pattern_count[pattern])
-                    string[ind] = new_term
-                    replaced_terms[new_term] = char
-                    break
+        for pattern in ["date", "percent", "word_number", "time", "number"]:
+            terms_found = [item[0] for item in list(patterns[pattern].finditer(string))]
+            for index in range(len(terms_found)):
+                replaced_terms[pattern + "_{}".format(index + 1)] = terms_found[index]
+            string = patterns[pattern].sub(pattern, string)
+
+        string = string.split(" ")
+
+        for index in range(len(string)):
+            term = string[index]
+            if term in ["date", "percent", "word_number", "time", "number"]:
+                pattern_count[term] += 1
+                encoded_term = term + "_{}".format(pattern_count[term])
+                string[index] = encoded_term
 
         string = " ".join(string)
 
-        if pattern_count["number"] == 0 and pattern_count["percent"] == 0:
+        if pattern_count["number"] == 0 and pattern_count["percent"] == 0 \
+            and pattern_count["word_number"] == 0:
            return None, None
 
         return string.lower(), replaced_terms
@@ -73,7 +84,9 @@ class RawDataPrep:
                                                             item[0] == "vnindex" or \
                                                             item[0].startswith("number_") or \
                                                             item[0].startswith("date_") or \
-                                                            item[0].startswith("percent_")]
+                                                            item[0].startswith("percent_") or \
+                                                            item[0].startswith("word_number_") or \
+                                                            item[0].startswith("time_")]
 
         return "|".join(important_words)
 

@@ -3,9 +3,11 @@ from tkinter import *
 from tkinter.ttk import Frame, Label, Entry
 
 
+
 class Design(Frame):
     def __init__(self, parent):
         Frame.__init__(self, parent)
+        self.input_sentence = " "
         self.parent = parent
         self.input_bar()
         self.function_button()
@@ -17,11 +19,12 @@ class Design(Frame):
         frame = Frame(self)
         frame.pack(fill=BOTH, expand=True)
 
-        lable = Label(frame, text="Input", width=6)
-        lable.pack(side=LEFT, anchor=N, padx=5, pady=5)
+        label = Label(frame, text="Input", width=6)
+        label.pack(side=LEFT, anchor=N, padx=5, pady=5)
 
         entry = Entry(frame)
         entry.pack(fill=BOTH, padx=5, pady=5, expand=True)
+        self.input_sentence = entry.get()
 
     def function_button(self):
         frame_button = Frame(self, relief=RAISED, borderwidth=1)
@@ -34,12 +37,19 @@ class Design(Frame):
         ok_button = Button(self, text="OK", command=self.show_result)
         ok_button.pack(side=RIGHT)
 
+    def process(self, sentence):
+        return "Processing sentence: " + sentence
+
+    def test_function(self, function, sentence):
+        return function(sentence)
+
     def show_result(self):
-        msbox.showinfo(title="RESULT", message="DONE!")
+        result = self.test_function(self.process, self.input_sentence)
+        msbox.showinfo(title="RESULT", message= result)
 
 
-if __name__ == '__main__':
-    root = Tk()
-    root.geometry("500x300+400+200")
-    app = Design(root)
-    root.mainloop()
+
+root = Tk()
+root.geometry("500x300+400+200")
+app = Design(root)
+root.mainloop()

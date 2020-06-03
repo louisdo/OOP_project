@@ -36,7 +36,7 @@ class Design(Frame):
         ok_button = Button(self, text="OK", command=self.show_result)
         ok_button.pack(side=RIGHT)
 
-    def process(self, sentence):
+    def test_process(self, sentence):
         return "Processing sentence: " + sentence
 
     def test_function(self, function, sentence):

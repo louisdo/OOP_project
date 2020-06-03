@@ -3,11 +3,11 @@ from tkinter import *
 from tkinter.ttk import Frame, Label, Entry
 
 
-
 class Design(Frame):
     def __init__(self, parent):
         Frame.__init__(self, parent)
         self.input_sentence = " "
+        self.entry = 0
         self.parent = parent
         self.input_bar()
         self.function_button()
@@ -22,9 +22,8 @@ class Design(Frame):
         label = Label(frame, text="Input", width=6)
         label.pack(side=LEFT, anchor=N, padx=5, pady=5)
 
-        entry = Entry(frame)
-        entry.pack(fill=BOTH, padx=5, pady=5, expand=True)
-        self.input_sentence = entry.get()
+        self.entry = Entry(frame)
+        self.entry.pack(fill=BOTH, padx=5, pady=5, expand=True)
 
     def function_button(self):
         frame_button = Frame(self, relief=RAISED, borderwidth=1)
@@ -44,8 +43,9 @@ class Design(Frame):
         return function(sentence)
 
     def show_result(self):
+        self.input_sentence = self.entry.get()
         result = self.test_function(self.process, self.input_sentence)
-        msbox.showinfo(title="RESULT", message= result)
+        msbox.showinfo(title="RESULT", message=result)
 
 
 

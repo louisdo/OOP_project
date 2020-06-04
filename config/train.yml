@@ -1,15 +1,15 @@
-train_data_path: "./data/folder_16052020_v2/data.csv" # path to .csv file that contains training data, 
+train_data_path: "../data/folder_04062020/data.csv" # path to .csv file that contains training data, 
                                          # the .csv file should contain the 'source' and the 'dest column'
 
-raw_data_path: "./data/Vnexpress.CLASSIFIED.VNINDEX.txt"
+raw_data_path: "../data/Vnexpress.CLASSIFIED.VNINDEX.txt"
 
 test_data_path: ""                       # path to .csv file that contains testing data, 
                                          # the .csv file should contain the 'source' and the 'dest column'
 
-ckpt_folder: "data/folder_16052020_v2/ckpt/testing"         # the path to the folder where the checkpoint will be saved,
+ckpt_folder: "../data/folder_04062020/ckpt/"         # the path to the folder where the checkpoint will be saved,
                                          # the folder should include 2 files: 'best_checkpoint.pth.tar' and 'best_config.json'
 
-vocab_path: "data/folder_16052020_v2/vocab/"       # the path to the folder where the vocab is saved, 
+vocab_path: "../data/folder_04062020/vocab/"       # the path to the folder where the vocab is saved, 
                                          # the folder should include 2 files: 'index2word.json' and 'word2index.json'
 
 resume_path: ""                          # the path to the resume checkpoint file
@@ -34,6 +34,6 @@ epochs: 5                              # number of training epochs
 
 lr: 0.0001                               # learning rate
 
-lr_decay: 0.1                            # learning rate decay rate
+lr_decay: 0.9                            # learning rate decay rate
 
 step_size: 2                             # step size for learning rate scheduler

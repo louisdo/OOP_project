@@ -3,10 +3,12 @@ import yaml
 import logging
 import json
 import os
+import sys
+sys.path.append("../")
 from tqdm import tqdm
 from model import Transformer
 from data import TransformerDataset
-from lib import CustomCrossEntropyLoss, maybe_create_folder
+from lib import CustomCrossEntropyLoss, Utils
 from preprocess import RawDataPrep
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
@@ -16,11 +18,14 @@ class ModelTrainer:
                  config_path):
         
         # configurations
-        CONFIG = ModelTrainer.get_config_yml(config_path)
+        CONFIG = Utils.get_config_yml(config_path)
         self.CONFIG = CONFIG
 
+        # get logger
+        self.logger = Utils.get_logger()
+
         # prepare data for training
-        self.prepare_data_for_training()
+        self._prepare_data_for_training()
 
         with open(os.path.join(CONFIG["vocab_path"], "index2word.json"), "r") as f:
             index2word = json.load(f)
@@ -28,7 +33,7 @@ class ModelTrainer:
         
         vocab_size = len(index2word)
 
-        maybe_create_folder(CONFIG["ckpt_folder"])
+        Utils.maybe_create_folder(CONFIG["ckpt_folder"])
 
         train_dataset = TransformerDataset(data_path = CONFIG["train_data_path"],
                                            max_len = CONFIG["max_len"],
@@ -54,7 +59,7 @@ class ModelTrainer:
                                  max_len = CONFIG["max_len"])
 
         # resume training from specified checkpoint
-        self.resume_training()
+        self._resume_training()
         
         self.model.to(device)
         self.device = device
@@ -77,91 +82,88 @@ class ModelTrainer:
         self.criterion = CustomCrossEntropyLoss()
 
 
-    def _train(self, epoch: int):
+    def _train_one_batch(self, batch_input):
+        source_sequences, inp_dest, tar_dest, source_key_padding_mask, \
+        dest_key_padding_mask, loss_mask, tgt_mask = batch_input
+
+        self.optimizer.zero_grad()
+
+        predictions = self.model(source_sequences.transpose(0, 1), 
+                                 inp_dest.transpose(0, 1),
+                                 tgt_mask = tgt_mask,
+                                 src_key_padding_mask = source_key_padding_mask,
+                                 tgt_key_padding_mask = dest_key_padding_mask)
+        
+        predictions = predictions.permute(0, 2, 1)
+
+        loss = self.criterion(predictions, tar_dest, loss_mask)
+        loss.backward()
+
+        self.optimizer.step()
+
+        return loss.item()
+
+        
+
+    def _train_one_epoch(self, epoch: int):
         # 1 epoch training
 
-        train_pbar = tqdm(self.train_loader)
-        train_pbar.desc = f'* Epoch {epoch+1}'
+        train_progress_bar = tqdm(self.train_loader, desc = f"* Epoch {epoch+1}")
 
-        tgt_mask = TransformerDataset.generate_square_subsequent_mask(self.CONFIG["max_len"]).to(self.device)
+        tgt_mask = Utils.generate_square_subsequent_mask(self.CONFIG["max_len"]).to(self.device)
 
-        for (source_sequences, inp_dest, tar_dest,
-             source_key_padding_mask, dest_key_padding_mask, loss_mask) in train_pbar:
+        for batch_tensors in train_progress_bar:
+            batch_tensors = Utils.change_device(device = self.device, 
+                                                tensors = batch_tensors)
 
-            source_sequences = source_sequences.to(self.device)
-            inp_dest = inp_dest.to(self.device)
-            tar_dest = tar_dest.to(self.device)
-            source_key_padding_mask = source_key_padding_mask.to(self.device)
-            dest_key_padding_mask = dest_key_padding_mask.to(self.device)
-            loss_mask = loss_mask.to(self.device)
+            batch_tensors = list(batch_tensors) + [tgt_mask]
+            loss_value = self._train_one_batch(batch_input = batch_tensors)
 
-            self.optimizer.zero_grad()
-
-            predictions = self.model(source_sequences.transpose(0, 1), 
-                                     inp_dest.transpose(0, 1),
-                                     tgt_mask = tgt_mask,
-                                     src_key_padding_mask = source_key_padding_mask,
-                                     tgt_key_padding_mask = dest_key_padding_mask)
-            
-            predictions = predictions.permute(0, 2, 1)
-
-            loss = self.criterion(predictions, tar_dest, loss_mask)
-            loss.backward()
-
-            self.optimizer.step()
-
-            train_pbar.set_postfix({
-                "train_loss": loss.item()
+            train_progress_bar.set_postfix({
+                "train_loss": loss_value
             })
             
     def train_model(self):
         self.model.train()
 
         for epoch in range(self.CONFIG["epochs"]):
-            self._train(epoch)
+            self._train_one_epoch(epoch)
             # adjust learning rate after 1 epoch
             self.scheduler.step()
         
         # save the model
-        self.save_checkpoint()
+        self._save_checkpoint()
 
 
-    def resume_training(self):
+    def _resume_training(self):
         if os.path.exists(self.CONFIG["resume_path"]):
-            state_dict = torch.load(os.path.join(self.CONFIG["ckpt_folder"], 
-                                                 "best_checkpoint.pth.tar"))
-            self.model.load_state_dict(state_dict)
-            logging.info("Resume training from {}".format(self.CONFIG["resume_path"]))
+            Utils.load_model(self.model, self.CONFIG["resume_path"])
+            self.logger.info("Resume training from {}".format(self.CONFIG["resume_path"]))
         else:
-            logging.info("Start training from scratch")
+            self.logger.info("Start training from scratch")
 
     
-    def save_checkpoint(self):
-        torch.save(self.model.state_dict(), 
-                   os.path.join(self.CONFIG["ckpt_folder"], "best_checkpoint.pth.tar"))
+    def _save_checkpoint(self):
+        model_save_path = os.path.join(self.CONFIG["ckpt_folder"], "best_checkpoint.pth.tar")
+        Utils.save_model(self.model, model_save_path)
 
         with open(os.path.join(self.CONFIG["ckpt_folder"], "best_config.json"), "w") as f:
             json.dump(self.CONFIG, f)
 
-    def prepare_data_for_training(self):
+
+    def _prepare_data_for_training(self):
         raw_data_path = self.CONFIG["raw_data_path"]
         data_path = self.CONFIG["train_data_path"]
         vocab_path = self.CONFIG["vocab_path"]
         
         if not os.path.exists(data_path):
-            logging.info("Data isn't yet available, preparing data")
+            self.logger.info("Data isn't yet available, preparing data")
             rawdataprep = RawDataPrep()
             df = rawdataprep.get_training_data(raw_data_path, vocab_path)
             df.to_csv(data_path, index=False)
 
 
-    @staticmethod
-    def get_config_yml(config_path):
-        with open(config_path, 'r') as stream:
-            return yaml.load(stream, Loader=yaml.FullLoader)
-
-
 
 if __name__ == "__main__":
-    model_trainer = ModelTrainer("./config/train.yml")
+    model_trainer = ModelTrainer("../config/train.yml")
     model_trainer.train_model()

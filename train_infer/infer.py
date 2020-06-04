@@ -4,6 +4,7 @@ import torch
 from pyvi import ViTokenizer
 from model import Transformer
 from preprocess import RawDataPrep
+from lib import Utils
 
 class TransformerInference:
     """
@@ -20,6 +21,7 @@ class TransformerInference:
         + vocab_folder: path to folder where the vocab files are saved,
         the folder should contain 'word2index.json' and 'index2word.json'
         """
+
         config_file = os.path.join(checkpoint_folder, "best_config.json")
         checkpoint_file = os.path.join(checkpoint_folder, "best_checkpoint.pth.tar")
 
@@ -28,16 +30,9 @@ class TransformerInference:
 
         self.device = torch.device(device)
 
-        word2index_file = os.path.join(vocab_folder, "word2index.json")
-        index2word_file = os.path.join(vocab_folder, "index2word.json")
-
-        with open(word2index_file, "r") as f:
-            word2index = json.load(f)
-            self.word2index = {item[0]:int(item[1]) for item in word2index.items()}
-
-        with open(index2word_file, "r") as f:
-            index2word = json.load(f)
-            self.index2word = {int(item[0]):item[1] for item in index2word.items()}
+        index2word, word2index = Utils.load_vocab(vocab_folder = vocab_folder)
+        self.word2index = {item[0]:int(item[1]) for item in word2index.items()}
+        self.index2word = {int(item[0]):item[1] for item in index2word.items()}
 
         self.patterns = RawDataPrep.get_patterns()
 
@@ -51,9 +46,9 @@ class TransformerInference:
                                  dropout = config["dropout"],
                                  vocab_size = real_vocab_size,
                                  max_len = config["max_len"])
+        Utils.load_model(self.model, checkpoint_file)
 
-        state_dict = torch.load(checkpoint_file)
-        self.model.load_state_dict(state_dict)
+        self.config = config
         self.model = self.model.to(self.device)
         self.model.eval()
 
@@ -67,11 +62,12 @@ class TransformerInference:
         output:
         + the predicted sequence
         """
+        
         processed_source, replaced_terms = RawDataPrep.process_sentence(source, self.patterns)
         tokenized_source = ViTokenizer.tokenize(processed_source).split(" ")
+        print(processed_source, tokenized_source)
 
-        encoded_source = [self.word2index["<sos>"]] + [self.word2index[token] for token in tokenized_source] +[self.word2index["<eos>"]]
-        
+        encoded_source = Utils.encode_line(tokenized_source, self.word2index, type_converter=int)
         encoded_source = torch.tensor(encoded_source).unsqueeze(0).to(self.device).transpose(0, 1)
 
         output = self.sos.detach().clone()
@@ -97,7 +93,11 @@ class TransformerInference:
                     word = replaced_terms[word]
                 result.append(word)
 
-        return " ".join(result)
+        result = result[1:-1]
+
+        print(" ".join(result).replace("_", " ").replace(" , ",", "))
+
+        return " ".join(result).replace("_", " ").replace(" , ",", ").strip()
 
     def __call__(self, source: str):
         return self.predict(source)

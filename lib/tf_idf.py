@@ -3,7 +3,7 @@ import json
 import os
 import logging
 from collections import Counter
-from .folders import maybe_create_folder
+from .utils import Utils
 
 
 class TFIDF:
@@ -88,13 +88,9 @@ class TFIDF:
 
         # if save_path is provided, save 'word2index.json' and 'index2word.json' to specified path
         if save_path is not None:
-            maybe_create_folder(save_path)
-
-            with open(os.path.join(save_path, "index2word.json"), "w") as f:
-                json.dump(index2word, f)
-
-            with open(os.path.join(save_path, "word2index.json"), "w") as f:
-                json.dump(word2index, f)
+            Utils.save_vocab(vocab_folder = save_path,
+                             index2word = index2word,
+                             word2index = word2index)
 
             logging.info("Saved 'index2word.json' and 'word2index.json' to {}".format(save_path))
 

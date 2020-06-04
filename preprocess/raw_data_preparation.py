@@ -3,10 +3,9 @@ import logging
 import json
 import os
 import pandas as pd
-from argparse import ArgumentParser
 from pyvi import ViTokenizer
 from tqdm import tqdm
-from lib.tf_idf import TFIDF
+from lib import TFIDF, Utils
 
 tqdm.pandas()
 
@@ -37,8 +36,8 @@ class RawDataPrep:
 
 
     @staticmethod
-    def process_sentence(sentence, patterns):
-        string = sentence.strip(".").replace(", ", " , ")
+    def clean_string(string: str):
+        string = string.strip(".").replace(", ", " , ")
         char2replace = ["(", ")", "[", "]",
                         "{", "}", '""', "''",
                         "``", ]
@@ -47,10 +46,49 @@ class RawDataPrep:
         string = string.lower()
         string = string.replace("vn-index", "vnindex")
 
+        return string
+
+    @staticmethod
+    def process_sentence(sentence: str, patterns):
+        """
+        process a raw sentence
+
+        input:
+            + sentence: a raw sentence
+            + patterns: a dictionary with its keys are the type name
+            of the pattern and the correspoding values are the regex pattern
+            of that type
+        
+        output:
+            + processed_sentence, a string
+            + a dictionary containing replaced terms
+
+        Example:
+            test = "Kết phiên sáng với 160 mã nhuộm xanh, Vn-Index tăng 9,76 điểm, lên 539,74 điểm, \
+            mua bán gần 60 triệu cổ phiếu, ứng với hơn 976 tỷ đồng 1.2"
+            patterns = RawDataPrep.get_patterns()
+
+            print(RawDataPrep.process_sentence(test, patterns))
+
+            output:
+            ('kết phiên sáng với number_1 mã nhuộm xanh , vnindex tăng number_2 điểm , lên number_3 điểm , mua bán gần word_number_1 cổ phiếu , ứng với hơn word_number_2 đồng number_4',
+            {'word_number_1': '60 triệu',
+            'word_number_2': '976 tỷ',
+            'number_1': '160',
+            'number_2': '9,76',
+            'number_3': '539,74',
+            'number_4': '1.2'})
+        """
+
+        string = RawDataPrep.clean_string(sentence)
+
         pattern_count = {pattern: 0 for pattern in patterns}
 
         replaced_terms = {}
-        for pattern in ["date", "percent", "word_number", "time", "number"]:
+
+        pattern_types = ["date", "percent", "word_number", "time", "number"]
+
+        for pattern in pattern_types:
             terms_found = [item[0] for item in list(patterns[pattern].finditer(string))]
             for index in range(len(terms_found)):
                 replaced_terms[pattern + "_{}".format(index + 1)] = terms_found[index]
@@ -60,7 +98,7 @@ class RawDataPrep:
 
         for index in range(len(string)):
             term = string[index]
-            if term in ["date", "percent", "word_number", "time", "number"]:
+            if term in pattern_types:
                 pattern_count[term] += 1
                 encoded_term = term + "_{}".format(pattern_count[term])
                 string[index] = encoded_term
@@ -81,22 +119,17 @@ class RawDataPrep:
         median = values[int(2 * len(values) / 3)]
 
         important_words = [item[0] for item in scores if item[1] >= median or \
-                                                            item[0] == "vnindex" or \
-                                                            item[0].startswith("number_") or \
-                                                            item[0].startswith("date_") or \
-                                                            item[0].startswith("percent_") or \
-                                                            item[0].startswith("word_number_") or \
-                                                            item[0].startswith("time_")]
+                                                         item[0] == "vnindex" or \
+                                                         item[0].startswith("number_") or \
+                                                         item[0].startswith("date_") or \
+                                                         item[0].startswith("percent_") or \
+                                                         item[0].startswith("word_number_") or \
+                                                         item[0].startswith("time_")]
 
         return "|".join(important_words)
 
     @staticmethod
-    def encode_line(sentence, word2index):
-        encoded_sentence = [word2index["<sos>"]] + [word2index[word] for word in sentence] + [word2index["<eos>"]]
-        return [str(item) for item in encoded_sentence]
-
-
-    def get_data_from_file(self, data_path: str) -> list:
+    def get_data_from_file(data_path: str) -> list:
         """
         input: 
             + data_path: path to txt file containing data
@@ -116,21 +149,21 @@ class RawDataPrep:
             if line_pattern.match(line):
                 data.append(line)
 
-        patterns = self.get_patterns()
+        patterns = RawDataPrep.get_patterns()
 
         processed_data = []
 
         for index in tqdm(range(len(data)), "Getting data"):
             string = data[index].split(":")[1].strip()
-            processed_string = self.process_sentence(string, patterns)[0]
+            processed_string = RawDataPrep.process_sentence(string, patterns)[0]
             if processed_string is not None:
                 processed_data.append(processed_string)
 
         return processed_data
 
         
-
-    def get_corpus(self, data_path: str):
+    @staticmethod
+    def get_corpus(data_path: str):
         """
         input:
             + data_path: path to txt file containing raw data
@@ -139,9 +172,7 @@ class RawDataPrep:
         """
         corpus = []
         
-        data = self.get_data_from_file(data_path)
-
-        max_number_count = -1
+        data = RawDataPrep.get_data_from_file(data_path)
 
         for sentence in tqdm(data, desc="Tokenizing data"):
             tokenized_sentence = ViTokenizer.tokenize(sentence)
@@ -149,12 +180,10 @@ class RawDataPrep:
             
             corpus.append(tokens)
 
-        logging.info("Max number of numbers in a sentence is {}".format(max_number_count))
-
         return corpus
 
-    def get_training_data(self, 
-                          data_path: str, 
+    @staticmethod
+    def get_training_data(data_path: str, 
                           vocab_save_path: str):
         """
         input:
@@ -165,27 +194,29 @@ class RawDataPrep:
             + a pd.DataFrame containing 2 columns 'source' and 'dest',
             the training data
         """
-
-        corpus = self.get_corpus(data_path)
+        # get corpus from raw data
+        corpus = RawDataPrep.get_corpus(data_path)
 
         tfidf = TFIDF(corpus,
                       vocab_save_path=vocab_save_path)
 
-        with open(os.path.join(vocab_save_path, "word2index.json"), "r") as f:
-            word2index = json.load(f)
+        word2index = Utils.load_vocab(vocab_folder = vocab_save_path)[1]
 
         df = pd.Series(corpus)
         df = pd.DataFrame(df)
         df.columns = ["dest"]
         df.dest = df.dest.apply(lambda x: "|".join(x))
 
-        df["source"] = df.dest.progress_apply(lambda x: self.get_important_word(x.split("|"), tfidf))
+        # add a source column containing the most important terms from one sentence according to TF-IDF score
+        df["source"] = df.dest.progress_apply(lambda x: RawDataPrep.get_important_word(x.split("|"), tfidf))
         
-        df.dest = df.dest.apply(lambda x: ",".join(self.encode_line(x.split("|"), word2index)))
-        df.source = df.source.apply(lambda x: ",".join(self.encode_line(x.split("|"), word2index)))
+        token_encoder = lambda x: ",".join(Utils.encode_line(x.split("|"), word2index))
+        df.dest = df.dest.apply(token_encoder)
+        df.source = df.source.apply(token_encoder)
 
         count = df.dest.apply(lambda x: len(x.split(",")))
 
+        # only take sentences with number of terms smaller than 50
         df = df[count <= 50]
 
         return df

@@ -1,9 +1,6 @@
 import tkinter.messagebox as msbox
 from tkinter import *
 from tkinter.ttk import Frame, Label, Entry
-import sys
-sys.path.append("../")
-from train_infer import TransformerInference
 
 
 class Interface(Frame):
@@ -24,14 +21,14 @@ class Interface(Frame):
         frame.pack(fill=BOTH, expand=True)
 
         label = Label(frame, text="Input", width=6)
-        label.pack(side=LEFT, anchor=N, padx=5, pady=5)
+        label.pack(side=LEFT, anchor= W, padx=5, pady=5)
 
         self.entry = Entry(frame)
-        self.entry.pack(fill=BOTH, padx=5, pady=5, expand=True)
+        self.entry.pack(fill=BOTH, padx=5, pady=5, expand= True)
 
     def function_button(self):
         frame_button = Frame(self, relief=RAISED, borderwidth=1)
-        frame_button.pack(fill=BOTH, expand=True)
+        frame_button.pack(fill=BOTH, expand = True)
 
         self.pack(fill=BOTH, expand=True)
         close_button = Button(self, text="Close", command=self.quit)
@@ -39,7 +36,6 @@ class Interface(Frame):
 
         ok_button = Button(self, text="OK", command=self.show_result)
         ok_button.pack(side=RIGHT)
-
 
     def show_result(self):
         self.input_sentence = self.entry.get()

@@ -13,7 +13,7 @@ class Main:
                                          device = device)
 
         self.root = Tk()
-        self.root.geometry("500x300+400+200")
+        self.root.geometry("600x100+400+200")
 
         self.app = Interface(self.root, inference)
 

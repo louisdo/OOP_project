@@ -20,14 +20,14 @@ class Design(Frame):
         frame.pack(fill=BOTH, expand=True)
 
         label = Label(frame, text="Input", width=6)
-        label.pack(side=LEFT, anchor=N, padx=5, pady=5)
+        label.pack(side=LEFT, anchor= W, padx=5, pady=5)
 
         self.entry = Entry(frame)
-        self.entry.pack(fill=BOTH, padx=5, pady=5, expand=True)
+        self.entry.pack(fill=BOTH, padx=5, pady=5, expand= True)
 
     def function_button(self):
         frame_button = Frame(self, relief=RAISED, borderwidth=1)
-        frame_button.pack(fill=BOTH, expand=True)
+        frame_button.pack(fill=BOTH, expand = True)
 
         self.pack(fill=BOTH, expand=True)
         close_button = Button(self, text="Close", command=self.quit)
@@ -44,12 +44,12 @@ class Design(Frame):
 
     def show_result(self):
         self.input_sentence = self.entry.get()
-        result = self.test_function(self.process, self.input_sentence)
+        result = self.test_function(self.test_process, self.input_sentence)
         msbox.showinfo(title="RESULT", message=result)
 
 
-
-root = Tk()
-root.geometry("500x300+400+200")
-app = Design(root)
-root.mainloop()
+if __name__ == '__main__':
+    root = Tk()
+    root.geometry("600x100+400+200")
+    app = Design(root)
+    root.mainloop()

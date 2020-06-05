@@ -120,7 +120,7 @@ class DataProcessing():
         for line in content:
             tmp = ''
             for word in line:
-                tmp = tmp + word + '_'
+                tmp = tmp + word + '|'
 
             list_line_source.append(tmp)
 
@@ -129,7 +129,7 @@ class DataProcessing():
         lines = re.split('\d+:', self.data)
 
         for line in lines:
-            line_dest = re.sub('\s+', '_', line)
+            line_dest = re.sub('\s+', '|', line)
             list_line_dest.append(line_dest)
 
         list_write = [['dest', 'source']]

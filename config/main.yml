@@ -1,2 +1,2 @@
-checkpoint_folder: "./data/folder_04062020/ckpt"
-vocab_folder: "./data/folder_04062020/vocab"
+checkpoint_folder: "./data/final_checkpoint/ckpt"
+vocab_folder: "./data/final_checkpoint/vocab"

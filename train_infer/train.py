@@ -71,7 +71,7 @@ class ModelTrainer:
                 {"params": self.model.encoder.parameters(), "lr": CONFIG["lr"]},
                 {"params": self.model.decoder.parameters(), "lr": CONFIG["lr"]},
                 {"params": self.model.wordemb.parameters(), "lr": CONFIG["lr"]},
-            ]
+            ], betas = [0.9, 0.98]
         )
 
         self.scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, 
@@ -122,6 +122,7 @@ class ModelTrainer:
             train_progress_bar.set_postfix({
                 "train_loss": loss_value
             })
+            
             
     def train_model(self):
         self.model.train()

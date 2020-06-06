@@ -14,7 +14,7 @@ class Interface(Frame):
         self.process_function = process_function
 
     def input_bar(self):
-        self.parent.title("Result")
+        self.parent.title("Narrative Generator")
         self.pack(fill=BOTH, expand=True)
 
         frame = Frame(self)

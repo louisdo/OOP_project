@@ -1,4 +1,4 @@
-train_data_path: "../data/folder_04062020/data.csv" # path to .csv file that contains training data, 
+train_data_path: "../data/folder_05062020/data.csv" # path to .csv file that contains training data, 
                                          # the .csv file should contain the 'source' and the 'dest column'
 
 raw_data_path: "../data/Vnexpress.CLASSIFIED.VNINDEX.txt"
@@ -6,10 +6,10 @@ raw_data_path: "../data/Vnexpress.CLASSIFIED.VNINDEX.txt"
 test_data_path: ""                       # path to .csv file that contains testing data, 
                                          # the .csv file should contain the 'source' and the 'dest column'
 
-ckpt_folder: "../data/folder_04062020/ckpt/"         # the path to the folder where the checkpoint will be saved,
+ckpt_folder: "../data/folder_05062020/ckpt/"         # the path to the folder where the checkpoint will be saved,
                                          # the folder should include 2 files: 'best_checkpoint.pth.tar' and 'best_config.json'
 
-vocab_path: "../data/folder_04062020/vocab/"       # the path to the folder where the vocab is saved, 
+vocab_path: "../data/folder_05062020/vocab/"       # the path to the folder where the vocab is saved, 
                                          # the folder should include 2 files: 'index2word.json' and 'word2index.json'
 
 resume_path: ""                          # the path to the resume checkpoint file
@@ -18,7 +18,7 @@ device: "cuda"                            # using which device to train, should 
 
 max_len: 60                              # max training sentence length
 
-batch_size: 4                            # self-explanatory
+batch_size: 8                            # self-explanatory
 
 d_model: 300                             # dimensionality of the main model Transformer, for more information
                                          # please refer to 'https://arxiv.org/abs/1706.03762'
@@ -28,7 +28,7 @@ nhead: 6                                 # number of attention heads for multi-h
 
 num_layers: 3                            # number of layers of both decoder and encoder block
 
-dropout: 0.1                             # dropout for training model
+dropout: 0.2                             # dropout for training model
 
 epochs: 5                              # number of training epochs
 
@@ -36,4 +36,4 @@ lr: 0.0001                               # learning rate
 
 lr_decay: 0.9                            # learning rate decay rate
 
-step_size: 2                             # step size for learning rate scheduler
+step_size: 1                             # step size for learning rate scheduler

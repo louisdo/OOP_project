@@ -21,6 +21,6 @@ class Main:
         self.root.mainloop()
 
 
-if __name__ == "__main__":
-    main = Main()
-    main.run()
+
+main = Main()
+main.run()

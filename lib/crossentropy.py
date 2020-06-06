@@ -26,7 +26,6 @@ class CustomCrossEntropyLoss(torch.nn.Module):
         'L' be the max training sequence length; the mask for padding masking
         when computing the the loss function
         """
-
         loss = self.crossentropy(predictions, target)
         loss = torch.mul(loss, tgt_key_padding_mask.float())
         return torch.sum(loss) / torch.sum(tgt_key_padding_mask.float())

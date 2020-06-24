@@ -65,7 +65,6 @@ class TransformerInference:
         
         processed_source, replaced_terms = RawDataPrep.process_sentence(source, self.patterns)
         tokenized_source = ViTokenizer.tokenize(processed_source).split(" ")
-        print(processed_source, tokenized_source)
 
         encoded_source = Utils.encode_line(tokenized_source, self.word2index, type_converter=int)
         encoded_source = torch.tensor(encoded_source).unsqueeze(0).to(self.device).transpose(0, 1)
@@ -94,8 +93,6 @@ class TransformerInference:
                 result.append(word)
 
         result = result[1:-1]
-
-        print(" ".join(result).replace("_", " ").replace(" , ",", "))
 
         return " ".join(result).replace("_", " ").replace(" , ",", ").strip()
 
